@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RoboReach · Techfest 2026-27</title>
+<style>
+:root{--bg:#f2f7fb;--card:#fff;--tx:#0f2438;--mu:#5b7186;--ac:#0b3050;--on:#fff;--sf:#e3f2fc;--bd:#d3e1ec;--ok:#177a43;--er:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1722;--card:#12222f;--tx:#e6f0f7;--mu:#8fa6b8;--ac:#8fd0f5;--on:#0b1722;--sf:#1a3346;--bd:#243a4b;--ok:#4cc17e;--er:#ff7b6b}}
+:root[data-theme="dark"]{--bg:#0b1722;--card:#12222f;--tx:#e6f0f7;--mu:#8fa6b8;--ac:#8fd0f5;--on:#0b1722;--sf:#1a3346;--bd:#243a4b;--ok:#4cc17e;--er:#ff7b6b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:18px 16px 0;max-width:980px;margin:auto}
+h1{margin:0;font-size:24px}h1 span{color:var(--mu);font-weight:400;font-size:15px;display:block}
+nav{display:flex;gap:8px;margin:14px 0}
+nav button{flex:1;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;font-weight:600;cursor:pointer}
+nav button.on{background:var(--ac);color:var(--on);border-color:var(--ac)}
+main{max-width:980px;margin:auto;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+h2{margin:0 0 10px;font-size:18px}h3{margin:14px 0 6px;font-size:14px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 3px}
+input[type=text],input[type=tel],input[type=email],input[type=number]{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+.btn{margin-top:14px;padding:11px 18px;border:0;border-radius:10px;background:var(--ac);color:var(--on);font:inherit;font-weight:600;cursor:pointer}
+.msg{margin-top:10px;font-size:13px}.ok{color:var(--ok)}.er{color:var(--er)}.mu{color:var(--mu)}
+.grid{display:grid;grid-template-columns:280px 1fr;gap:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.row{display:flex;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid var(--bd);border-radius:10px;margin-bottom:6px;cursor:pointer;background:var(--card)}
+.row.on{border-color:var(--ac);background:var(--sf)}
+.row b{display:block}.row small{color:var(--mu)}
+.chk{display:flex;align-items:center;gap:8px;padding:5px 0}
+.chk input{width:18px;height:18px}
+.pen{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0}
+.pen input{width:64px}
+.tot{position:sticky;bottom:0;background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin-top:12px}
+.tot strong{font-size:20px}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--sf);color:var(--tx)}
+.wrap{overflow-x:auto}
+.rules li{margin:3px 0}
+</style></head><body>
+<header><h1>RoboReach<span>Techfest 2026-27 · IIT Bombay · Registration &amp; Scoring</span></h1>
+<nav><button id="t-reg" class="on">Register a team</button><button id="t-coord">Coordinator</button></nav></header>
+<main id="app"><div class="card mu">Loading…</div></main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,collection,doc,addDoc,setDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// >>> PASTE YOUR FIREBASE WEB CONFIG HERE (Project settings > Your apps > Web app)
+const firebaseConfig={apiKey:"PASTE_ME",authDomain:"PASTE_ME.firebaseapp.com",projectId:"PASTE_ME",appId:"PASTE_ME"};
+const fapp=initializeApp(firebaseConfig),fdb=getFirestore(fapp),auth=getAuth(fapp);
+
+const TASKS=[
+{id:'pickup',n:'1 · The Pickup',i:[['Cube picked up and held',10]]},
+{id:'ascent',n:'2 · The Ascent',i:[['15° ramp climbed holding cube',30]]},
+{id:'bridge',n:'3 · The Bridge',i:[['400 mm bridge crossed',10]]},
+{id:'descent',n:'4 · Descent Breakdown',i:[['Descent + 40 mm speed breakers',60]]},
+{id:'touch',n:'5 · Touchdown',i:[['Cube in 80×80 box',10]]},
+{id:'stack',n:'6 · Stacker',i:[['Cylinder 1',20],['Cylinder 2',20],['Cylinder 3',20],['Cone on top (tower stands 5 s)',30]]},
+{id:'long',n:'7 · Longshot',lines:10},
+{id:'da',n:'8 · Robonardo DaVinci',i:[['TF traced',130]]},
+{id:'downy',n:'9 · Downy',i:[['Cube placed at 400 mm',30]]},
+{id:'hanoi',n:"10 · Hanoi'd",i:[['Tower of Hanoi solved',80]]},
+{id:'buzz',n:'11 · Buzzed',i:[['Loop moved to end',150]]},
+{id:'diag',n:'12 · The Diagonals',i:[['Obstacles cleared',20]]},
+{id:'esc',n:'13 · Escape Room',i:[['Object 1',10],['Object 2',20],['Object 3',30],['Object 4',40]]},
+{id:'slalom',n:'14 · The Slalom Ridge',i:[['Zig-zag crossed',40]]},
+{id:'end',n:'15 · The End',i:[['Bot stopped in end zone',10]]}];
+const PEN=[['oob','Out of bounds (any wheel off track)',10],['drop1','Cube dropped before Touchdown',15],['area','Object not fully inside area',10],['throw','Overstepped throw line',10],['da','DaVinci letter outside outline',30],['downy','Downy cube dropped',10],['hanoi','Hanoi rule violation',20],['buzz','Loop touched wire',20],['edrop','Escape object dropped',15],['efail','Escape object missed hole',20]];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let admin=false,done=false,teams=[],scores={},sel=null,cur=null,tab='reg';
+
+function calc(s){
+  let a=0;
+  TASKS.forEach(t=>{
+    if(t.lines)a+=Math.min(t.lines,Math.max(0,+s.lines||0))*10;
+    else t.i.forEach((x,k)=>{if(s.d&&s.d[t.id]&&s.d[t.id][k])a+=x[1]});
+  });
+  let p=0;PEN.forEach(x=>p+=(Math.max(0,+(s.p&&s.p[x[0]])||0))*x[2]);
+  const tm=(s.time===''||s.time==null)?null:+s.time;
+  const b=(tm!=null&&tm<300)?Math.min(100,Math.round(300-tm)):0;
+  return{a,b,p,t:a+b-p};
+}
+function totalOf(id){const s=scores[id];return s&&s.tot?s.tot:null}
+
+function setTab(t){tab=t;$('t-reg').classList.toggle('on',t==='reg');$('t-coord').classList.toggle('on',t==='coord');render()}
+$('t-reg').onclick=()=>setTab('reg');$('t-coord').onclick=()=>setTab('coord');
+
+function render(){tab==='reg'?renderReg():renderCoord()}
+
+/* ---------- registration ---------- */
+function renderReg(){
+  if(done){$('app').innerHTML=`<div class="card"><h2>You're registered ✅</h2><p class="mu">Your team has been added. We'll contact the team leader on the phone/email you gave.</p><button class="btn" id="again">Register another team</button></div>`;$('again').onclick=()=>{done=false;renderReg()};return}
+  $('app').innerHTML=`
+  <div class="card"><h2>Register your team</h2>
+  <p class="mu" style="margin-top:0">Fill this once. Teams can have up to 4 members; one team leader registers.</p>
+  <label>Team name</label><input type="text" id="f-team" maxlength="60">
+  <label>Team leader name</label><input type="text" id="f-leader" maxlength="60">
+  <label>Phone number</label><input type="tel" id="f-phone" maxlength="15">
+  <label>Email ID</label><input type="email" id="f-email" maxlength="80">
+  <button class="btn" id="f-go">Register</button><div class="msg" id="f-msg"></div></div>
+  <div class="card"><h2>Quick rules</h2><ul class="rules mu" style="margin:0;padding-left:18px">
+  <li>Wireless, manually controlled bot with a mounted arm. Fits in 300×200×300 mm at start. Max 24 V DC, kill-switch required.</li>
+  <li>1 run per team, 7 minutes (420 s). Time bonus if you finish under 300 s (max 100).</li>
+  <li>Max score 870 + 100 bonus. Finals: 15–18 December.</li></ul></div>`;
+  $('f-go').onclick=submitReg;
+}
+async function submitReg(){
+  const v=id=>$(id).value.trim(),msg=$('f-msg');
+  const team=v('f-team'),leader=v('f-leader'),phone=v('f-phone'),email=v('f-email');
+  if(!team||!leader)return msg.innerHTML='<span class="er">Team name and leader name are required.</span>';
+  if(phone.replace(/\D/g,'').length<10)return msg.innerHTML='<span class="er">Enter a valid phone number.</span>';
+  if(!/^\S+@\S+\.\S+$/.test(email))return msg.innerHTML='<span class="er">Enter a valid email.</span>';
+  $('f-go').disabled=true;
+  try{await addDoc(collection(fdb,'teams'),{team,leader,phone,email,at:Date.now()});done=true;renderReg()}
+  catch(e){msg.innerHTML='<span class="er">Could not register ('+esc(e.code||'error')+'). Check your connection and try again.</span>';$('f-go').disabled=false}
+}
+
+/* ---------- coordinator ---------- */
+function ranked(){
+  return teams.slice().sort((a,b)=>{
+    const x=scores[a.uid]||{},y=scores[b.uid]||{};
+    const ta=x.tot?x.tot.t:-1e9,tb=y.tot?y.tot.t:-1e9;
+    if(ta!==tb)return tb-ta;
+    const xt=x.time===''||x.time==null?1e9:+x.time,yt=y.time===''||y.time==null?1e9:+y.time;
+    if(xt!==yt)return xt-yt;
+    return (x.tot?x.tot.p:0)-(y.tot?y.tot.p:0);
+  });
+}
+function renderCoord(){
+  if(!admin){
+    $('app').innerHTML=`<div class="card"><h2>Coordinator login</h2><label>Email</label><input type="email" id="l-e"><label>Password</label><input type="password" id="l-p" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit"><button class="btn" id="l-go">Sign in</button><div class="msg" id="l-msg"></div></div>`;
+    $('l-go').onclick=async()=>{try{await signInWithEmailAndPassword(auth,$('l-e').value.trim(),$('l-p').value)}catch(e){$('l-msg').innerHTML='<span class="er">Login failed.</span>'}};
+    return}
+  $('app').innerHTML=`<div class="grid"><div><div class="card"><h2>Teams (${teams.length})</h2><button class="btn" style="margin:0 0 10px;padding:6px 12px" id="so">Sign out</button><div id="list"></div></div></div><div id="panel"></div></div>`;
+  $('so').onclick=()=>signOut(auth);
+  renderList();renderPanel();
+}
+function renderList(){
+  const l=$('list');if(!l)return;
+  if(!teams.length){l.innerHTML='<p class="mu">No registrations yet.</p>';return}
+  l.innerHTML=ranked().map((t,i)=>{const s=totalOf(t.uid);
+    return `<div class="row ${sel===t.uid?'on':''}" data-id="${esc(t.uid)}"><div><b>${esc(t.team)}</b><small>${esc(t.leader)}</small></div><div style="text-align:right"><b>${s?s.t:'—'}</b><small>${s?'#'+(i+1):'not scored'}</small></div></div>`}).join('');
+  l.querySelectorAll('.row').forEach(r=>r.onclick=()=>{sel=r.dataset.id;const s=scores[sel];cur=s?JSON.parse(JSON.stringify({d:s.d||{},lines:s.lines||0,p:s.p||{},time:s.time??''})):{d:{},lines:0,p:{},time:''};renderList();renderPanel()});
+}
+function renderPanel(){
+  const p=$('panel');if(!p)return;
+  const t=teams.find(x=>x.uid===sel);
+  if(!t){p.innerHTML='<div class="card mu">Pick a team on the left to enter its score.</div>';return}
+  p.innerHTML=`<div class="card"><h2>${esc(t.team)}</h2>
+  <div class="mu">Leader: ${esc(t.leader)} · <a href="tel:${esc(t.phone)}" style="color:inherit">${esc(t.phone)}</a> · ${esc(t.email)}</div>
+  <h3>Tasks completed</h3>
+  ${TASKS.map(k=>k.lines?`<div class="pen"><span>${k.n} — lines crossed (10 pts each, max ${k.lines})</span><input type="number" min="0" max="${k.lines}" data-lines value="${cur.lines||0}"></div>`
+   :`<div><b style="font-size:13px">${k.n}</b>${k.i.map((x,j)=>`<label class="chk" style="margin:0;color:var(--tx)"><input type="checkbox" data-t="${k.id}" data-j="${j}" ${cur.d[k.id]&&cur.d[k.id][j]?'checked':''}> ${x[0]} <span class="tag">${x[1]}</span></label>`).join('')}</div>`).join('')}
+  <h3>Penalties (count)</h3>
+  ${PEN.map(x=>`<div class="pen"><span>${x[1]} <span class="tag">−${x[2]}</span></span><input type="number" min="0" data-p="${x[0]}" value="${cur.p[x[0]]||0}"></div>`).join('')}
+  <h3>Total time (seconds)</h3><input type="number" min="0" max="420" id="c-time" placeholder="e.g. 245" value="${cur.time}">
+  <div class="tot"><span>Tasks <b id="s-a">0</b></span><span>Time bonus <b id="s-b">0</b></span><span>Penalties <b id="s-p">0</b></span><span>Total <strong id="s-t">0</strong></span></div>
+  <button class="btn" id="c-save">Save score</button><div class="msg" id="c-msg"></div></div>`;
+  const upd=()=>{const r=calc(cur);$('s-a').textContent=r.a;$('s-b').textContent=r.b;$('s-p').textContent=r.p;$('s-t').textContent=r.t};
+  p.querySelectorAll('[data-t]').forEach(e=>e.onchange=()=>{const a=cur.d[e.dataset.t]=cur.d[e.dataset.t]||[];a[+e.dataset.j]=e.checked;upd()});
+  p.querySelectorAll('[data-p]').forEach(e=>e.oninput=()=>{cur.p[e.dataset.p]=Math.max(0,+e.value||0);upd()});
+  const ln=p.querySelector('[data-lines]');if(ln)ln.oninput=()=>{cur.lines=Math.min(10,Math.max(0,+ln.value||0));upd()};
+  $('c-time').oninput=e=>{cur.time=e.target.value===''?'':Math.min(420,Math.max(0,+e.target.value));upd()};
+  $('c-save').onclick=async()=>{
+    const msg=$('c-msg');$('c-save').disabled=true;
+    try{await setDoc(doc(fdb,'scores',sel),{d:cur.d,lines:cur.lines||0,p:cur.p,time:cur.time,tot:calc(cur),at:Date.now()});msg.innerHTML='<span class="ok">Score saved.</span>'}
+    catch(e){msg.innerHTML='<span class="er">Save failed ('+esc(e.code||'error')+').</span>'}
+    $('c-save').disabled=false;
+  };
+  upd();
+}
+
+/* ---------- boot ---------- */
+let unsubs=[];
+const denied=()=>{signOut(auth);alert('This account is not a coordinator.')};
+onAuthStateChanged(auth,u=>{
+  unsubs.forEach(f=>f());unsubs=[];teams=[];scores={};sel=null;admin=!!u;
+  if(u){
+    unsubs.push(onSnapshot(collection(fdb,'teams'),q=>{teams=q.docs.map(x=>({...x.data(),uid:x.id}));if(tab==='coord'){renderList();if(sel&&!teams.find(t=>t.uid===sel)){sel=null;renderPanel()}}},denied));
+    unsubs.push(onSnapshot(collection(fdb,'scores'),q=>{scores={};q.docs.forEach(x=>scores[x.id]=x.data());if(tab==='coord')renderList()},()=>{}));
+  }
+  render();
+});
+render();
+</script></body></html>
