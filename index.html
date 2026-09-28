@@ -45,7 +45,15 @@ import {getFirestore,collection,doc,addDoc,setDoc,onSnapshot} from "https://www.
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // >>> PASTE YOUR FIREBASE WEB CONFIG HERE (Project settings > Your apps > Web app)
-const firebaseConfig={apiKey:"PASTE_ME",authDomain:"PASTE_ME.firebaseapp.com",projectId:"PASTE_ME",appId:"PASTE_ME"};
+const firebaseConfig = {
+  apiKey: "AIzaSyA_sFfg6qok5tb48loMy-u6z6x8yre5tKA",
+  authDomain: "roboreach-821fa.firebaseapp.com",
+  projectId: "roboreach-821fa",
+  storageBucket: "roboreach-821fa.firebasestorage.app",
+  messagingSenderId: "474057090580",
+  appId: "1:474057090580:web:28596609b24a3dddc96901",
+  measurementId: "G-3VMBSYNN79"
+};
 const fapp=initializeApp(firebaseConfig),fdb=getFirestore(fapp),auth=getAuth(fapp);
 
 const TASKS=[
